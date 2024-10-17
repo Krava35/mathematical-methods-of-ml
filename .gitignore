@@ -1,0 +1,14 @@
+# Ignore Python bytecode and cache
+__pycache__/
+*.py[cod]
+
+# Ignore pytest cache
+.pytest_cache/
+
+# Ignore egg info
+*.egg-info/
+
+# Ignore virtual environment directories
+venv/
+env/
+.venv/
