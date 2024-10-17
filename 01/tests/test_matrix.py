@@ -24,6 +24,20 @@ class TestMatrix(unittest.TestCase):
         expected = np.array([[58, 64], [139, 154]])
         result = (m3 * m4).value
         np.testing.assert_array_equal(result, expected)
+    
+    def test_multiplication_by_number(self):
+        m = Matrix(np.array([[1, 2, 3], [4, 5, 6]]))
+        alfa = 10
+        expected = np.array([[10, 20, 30], [40, 50, 60]])
+        result = (m * alfa).value
+        np.testing.assert_array_equal(result, expected)
+    
+    def test_multiplication_by_number(self):
+        m = Matrix(np.array([[1, 2, 3], [4, 5, 6]]))
+        alfa = 10
+        expected = np.array([[10, 20, 30], [40, 50, 60]])
+        result = (alfa * m).value
+        np.testing.assert_array_equal(result, expected)
 
     def test_addition_mismatched_dimensions(self):
         m1 = Matrix(np.array([[1, 2], [3, 4]]))

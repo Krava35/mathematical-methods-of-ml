@@ -51,10 +51,19 @@ class Matrix:
             raise ValueError(f"Can't substruct matrix with shapes: {self.shape}, {matrix.shape}")
         return Matrix(self.value - matrix.value)
     
-    def __mul__(self, matrix: 'Matrix'):
-        if self.shape[1] != matrix.shape[0]:
-            raise ValueError(f"Can't multiply matrix with shapes: {self.shape}, {matrix.shape}")
-        return Matrix(self.value.dot((matrix.value)))
+    def __mul__(self, other: 'Matrix'):
+        if isinstance(other, Matrix):
+            if self.shape[1] != other.shape[0]:
+                raise ValueError(f"Can't multiply matrix with shapes: {self.shape}, {other.shape}")
+            return Matrix(self.value.dot((other.value)))
+        elif isinstance(other, (int, float)):
+            return Matrix(self.value * other)
+    
+    def __rmul__(self, other):
+        if isinstance(other, (int, float)):
+            return Matrix(other * self.value)
+        else:
+            return NotImplemented
 
 
     def transpose(self) -> NDArray:
@@ -64,6 +73,7 @@ class Matrix:
         Return:
             value (np.NDArray): Transponsed matrix.
         """
+        return Matrix(self.value.transpose())
 
     def eigenvalues(self) -> NDArray | None:
         """
