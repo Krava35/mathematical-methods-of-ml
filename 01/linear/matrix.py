@@ -36,7 +36,26 @@ class Matrix:
         Return:
             value (np.NDArray): Matrix value.
         """
-        self.matrix = value
+        if not isinstance(value, np.ndarray):
+            raise TypeError("Data must be a numpy ndarray.")
+        self.value = value
+        self.shape = value.shape
+    
+    def __add__(self, matrix: 'Matrix'):
+        if self.shape != matrix.shape:
+            raise ValueError(f"Can't add matrix with shapes: {self.shape}, {matrix.shape}")
+        return Matrix(matrix.value + self.value)
+
+    def __sub__(self, matrix: 'Matrix'):
+        if self.shape != matrix.shape:
+            raise ValueError(f"Can't substruct matrix with shapes: {self.shape}, {matrix.shape}")
+        return Matrix(self.value - matrix.value)
+    
+    def __mul__(self, matrix: 'Matrix'):
+        if self.shape[1] != matrix.shape[0]:
+            raise ValueError(f"Can't multiply matrix with shapes: {self.shape}, {matrix.shape}")
+        return Matrix(self.value.dot((matrix.value)))
+
 
     def transpose(self) -> NDArray:
         """
@@ -55,7 +74,7 @@ class Matrix:
         """
         pass
 
-    def eigevectors(self) -> NDArray | None:
+    def eigenvectors(self) -> NDArray | None:
         """
         Calculate the eigenvectors of the matrix.
 
@@ -81,3 +100,4 @@ class Matrix:
             with matched matrix values.
         """
         pass
+
