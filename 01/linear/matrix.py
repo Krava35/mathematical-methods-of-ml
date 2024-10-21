@@ -75,14 +75,48 @@ class Matrix:
         """
         return Matrix(self.value.transpose())
 
-    def eigenvalues(self) -> NDArray | None:
-        """
-        Calculate the eigenvalues of the matrix.
+    def QR_Decomposition(self):
+        A = self.value
+        n, m = A.shape
 
-        Return:
-            value (np.NDArray): eigenvalues of the matrix.
-        """
-        pass
+        Q = np.empty((n, n))
+        u = np.empty((n, n))
+
+        u[:, 0] = A[:, 0]
+        Q[:, 0] = u[:, 0] / np.linalg.norm(u[:, 0])
+
+        for i in range(1, n):
+
+            u[:, i] = A[:, i]
+            for j in range(i):
+                u[:, i] -= (A[:, i] @ Q[:, j]) * Q[:, j]
+            Q[:, i] = u[:, i] / np.linalg.norm(u[:, i])
+
+        R = np.zeros((n, m))
+        for i in range(n):
+            for j in range(i, m):
+                R[i, j] = A[:, j] @ Q[:, i]
+
+        return Q, R
+
+    def eigenvalues(self, tol=1e-12, maxiter=3000):
+        "Find the eigenvalues of A using QR decomposition."
+        A = self.value
+        A_old = np.copy(A)
+        A_new = np.copy(A)
+
+        diff = np.inf
+        i = 0
+        while (diff > tol) and (i < maxiter):
+            A_old[:, :] = A_new
+            Matrxi_A_old = Matrix(A_old)
+            Q, R = Matrxi_A_old.QR_Decomposition()
+            A_new[:, :] = R @ Q
+            diff = np.abs(A_new - A_old).max()
+            i += 1
+        eigvals = np.diag(A_new)
+
+        return eigvals
 
     def eigenvectors(self) -> NDArray | None:
         """
