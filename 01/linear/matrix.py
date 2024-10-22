@@ -75,6 +75,24 @@ class Matrix:
         """
         return Matrix(self.value.transpose())
 
+    def __diag_sign(self, A):
+        "Compute the signs of the diagonal of matrix A"
+        D = np.diag(np.sign(np.diag(A)))
+        return D
+
+    def __adjust_sign(self, Q, R):
+        """
+        Adjust the signs of the columns in Q and rows in R to
+        impose positive diagonal of Q
+        """
+
+        D = self.__diag_sign(Q)
+
+        Q[:, :] = Q @ D
+        R[:, :] = D @ R
+
+        return Q, R
+
     def QR_Decomposition(self):
         A = self.value
         n, m = A.shape
@@ -97,13 +115,16 @@ class Matrix:
             for j in range(i, m):
                 R[i, j] = A[:, j] @ Q[:, i]
 
+        Q, R = self.__adjust_sign(Q, R)
         return Q, R
 
-    def eigenvalues(self, tol=1e-12, maxiter=3000):
+    def eigen(self, tol=1e-12, maxiter=5000):
         "Find the eigenvalues of A using QR decomposition."
         A = self.value
         A_old = np.copy(A)
         A_new = np.copy(A)
+
+        V = np.eye(A.shape[0])
 
         diff = np.inf
         i = 0
@@ -112,20 +133,14 @@ class Matrix:
             Matrxi_A_old = Matrix(A_old)
             Q, R = Matrxi_A_old.QR_Decomposition()
             A_new[:, :] = R @ Q
+            V = V @ Q
             diff = np.abs(A_new - A_old).max()
             i += 1
+        
         eigvals = np.diag(A_new)
+        eigvecs = V
 
-        return eigvals
-
-    def eigenvectors(self) -> NDArray | None:
-        """
-        Calculate the eigenvectors of the matrix.
-
-        Return:
-            value (np.NDArray): eigenvectors of the matrix.
-        """
-        pass
+        return eigvals, eigvecs
 
     def inverse(self) -> Self | None:
         """
@@ -143,5 +158,18 @@ class Matrix:
             svd (Dict[str, NDArray]): SVD in dictionary with keys: [U, S, V],
             with matched matrix values.
         """
-        pass
+        def calculU(M):
+            Matrix_M = Matrix(M)
+            B = Matrix_M * Matrix_M.transpose() 
+            eigenvalues, eigenvectors = B.eigen()
+            ncols = np.argsort(eigenvalues)[::-1] 
+            
+            return eigenvectors[:,ncols] 
+
+        def calculVt(M): 
+            Matrix_M = Matrix(M)
+            B = Matrix_M.transpose() * Matrix_M
+            eigenvalues, eigenvectors = B.eigen()
+            ncols = np.argsort(eigenvalues)[::-1] 
+            return eigenvectors[:,ncols].T 
 

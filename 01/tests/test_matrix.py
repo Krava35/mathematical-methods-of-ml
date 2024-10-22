@@ -55,5 +55,22 @@ class TestMatrix(unittest.TestCase):
             _ = m1 * m2
         self.assertEqual(str(context.exception), "Can't multiply matrix with shapes: (2, 2), (3, 2)")
 
+    def test_QR_decomposition(self):
+        A = np.random.random((3, 3))
+        Q_result, R_result = Matrix(A).QR_Decomposition()
+        Q_expected, R_expected = np.linalg.qr(A)
+
+        np.allclose(Q_result, Q_expected)
+
+    def test_gram_matrix_eigen(self):
+        A = np.random.random((3, 3))
+        A = A.transpose()*A
+        result_values, result_vectors = Matrix(A).eigen()
+        excepted_values, expected_vectors = np.linalg.eig(A)
+        result_values = sorted(result_values)
+        excepted_values = sorted(excepted_values)
+        np.testing.assert_allclose(excepted_values, result_values)
+        np.testing.assert_allclose(expected_vectors, result_vectors)
+
 if __name__ == "__main__":
     unittest.main()
