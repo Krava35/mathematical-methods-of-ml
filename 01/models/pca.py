@@ -14,7 +14,7 @@ class SVD_PCA:
         X_centered = X - np.mean(X, axis=0)
         matrix_X = Matrix(X_centered)    
         # SVD разложение
-        U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
+        # U, S, Vt = np.linalg.svd(X_centered, full_matrices=False)
         U, S, Vt = matrix_X.svd()
         # Матрица главных компонент (V в SVD)
         P = Vt.T

@@ -122,7 +122,7 @@ class Matrix:
         Q, R = self.__adjust_sign(Q, R)
         return Q, R
 
-    def eigen(self, tol=1e-9, maxiter=20000):
+    def eigen(self, tol=1e-6, maxiter=10000):
         "Find the eigenvalues of A using QR decomposition."
 
         def improved_wilkinson_shift(A):
@@ -171,36 +171,43 @@ class Matrix:
 
 
     def svd(self):
-        """
-        Calculate singular value decomposition of the matrix.
-        """
         def calculU(M):
-            print(M)
             Matrix_M = Matrix(M)
-            B = Matrix_M * Matrix_M.transpose() 
-            eigenvalues, eigenvectors = B.eigen()
-            ncols = np.argsort(eigenvalues)[::-1] 
-            
-            return eigenvectors[:,ncols] 
+            B = Matrix_M * Matrix_M.transpose()  # B = M M^T
+            eigenvalues, eigenvectors = B.eigen()  # Eigenvectors are left singular vectors
+
+            # Sort eigenvalues and corresponding eigenvectors
+            sorted_indices = np.argsort(eigenvalues)[::-1]
+            U = eigenvectors[:, sorted_indices]  # Rearrange eigenvectors in descending order
+            return U
 
         def calculVt(M): 
             Matrix_M = Matrix(M)
-            B = Matrix_M.transpose() * Matrix_M
-            eigenvalues, eigenvectors = B.eigen()
-            ncols = np.argsort(eigenvalues)[::-1] 
-            return eigenvectors[:,ncols].T
-        
+            B = Matrix_M.transpose() * Matrix_M  # B = M^T M
+            eigenvalues, eigenvectors = B.eigen()  # Eigenvectors are right singular vectors (V)
+            
+            # Sort eigenvalues and corresponding eigenvectors
+            sorted_indices = np.argsort(eigenvalues)[::-1]
+            Vt = eigenvectors[:, sorted_indices].T  # Transpose V to get V^T
+            return Vt
+            
         def calculSigma(M):
             matrix_M = Matrix(M)
-            if np.size((matrix_M * matrix_M.transpose()).value) > np.size((matrix_M.transpose()*matrix_M).value): 
-                new_M = matrix_M.transpose()*matrix_M
+            
+            # Compute eigenvalues of M M^T or M^T M
+            if np.size((matrix_M * matrix_M.transpose()).value) > np.size((matrix_M.transpose() * matrix_M).value):
+                new_M = matrix_M.transpose() * matrix_M
             else: 
                 new_M = matrix_M * matrix_M.transpose()
-                
-            eigenvalues, eigenvectors = new_M.eigen()
-            eigenvalues = np.sqrt(eigenvalues)
-            #Sorting in descending order as the svd function does 
-            return eigenvalues[::-1]
+            
+            eigenvalues, _ = new_M.eigen()
+            
+            # Singular values are the square roots of the eigenvalues
+            singular_values = np.sqrt(np.abs(eigenvalues))  # Ensure no negative values due to numerical issues
+            
+            # Sorting in descending order
+            sorted_singular_values = np.sort(singular_values)[::-1]
+            return sorted_singular_values
         
         U = calculU(self.value) 
         Sigma = calculSigma(self.value) 
