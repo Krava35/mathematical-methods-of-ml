@@ -108,7 +108,11 @@ class Matrix:
             u[:, i] = A[:, i]
             for j in range(i):
                 u[:, i] -= (A[:, i] @ Q[:, j]) * Q[:, j]
-            Q[:, i] = u[:, i] / np.linalg.norm(u[:, i])
+            norm_u_i = np.linalg.norm(u[:, i])
+            # if norm_u_i > 1e-15:  # Use a small threshold to avoid division by zero
+            Q[:, i] = u[:, i] / norm_u_i
+            # else:
+            #     Q[:, i] = np.zeros_like(u[:, i])  # Handle zero norm gracefully
 
         R = np.zeros((n, m))
         for i in range(n):
@@ -118,8 +122,23 @@ class Matrix:
         Q, R = self.__adjust_sign(Q, R)
         return Q, R
 
-    def eigen(self, tol=1e-12, maxiter=100000):
+    def eigen(self, tol=1e-9, maxiter=20000):
         "Find the eigenvalues of A using QR decomposition."
+
+        def improved_wilkinson_shift(A):
+            """Compute an improved Wilkinson shift using the last 2x2 block of A."""
+            # Extract the last 2x2 block
+            a = A[-2, -2]
+            b = A[-1, -2]
+            c = A[-1, -1]
+            
+            # Compute the eigenvalues of the 2x2 block
+            delta = (a - c) / 2
+            sign = np.sign(delta) if delta != 0 else 1  # Handle division by zero
+            mu_1 = c - sign * b**2 / (np.abs(delta) + np.sqrt(delta**2 + b**2))
+            
+            # mu_1 is the Wilkinson shift we will use
+            return mu_1
         A = self.value
         A_old = np.copy(A)
         A_new = np.copy(A)
@@ -130,8 +149,9 @@ class Matrix:
         i = 0
         while (diff > tol) and (i < maxiter):
             A_old[:, :] = A_new
-            # Wilkinson shift (using the bottom-right element of A)
-            mu = A_old[-1, -1]  # Shift is the last diagonal element
+            # Wilkinson Shift: Use the last two diagonal elements for better accuracy
+            mu = improved_wilkinson_shift(A_old)
+
             A_shifted = A_old - mu * np.eye(A.shape[0])  # A - μI
             
             # Perform QR decomposition on the shifted matrix
@@ -149,21 +169,10 @@ class Matrix:
 
         return eigvals, eigvecs
 
-    def inverse(self) -> Self | None:
-        """
-        Calculate an inverse matrix of the matrix.
 
-        Return:
-            Matrix (new obj of class Matrix): the inversed matrix.
-        """
-
-    def svd(self) -> Dict[str, NDArray] | None:
+    def svd(self):
         """
         Calculate singular value decomposition of the matrix.
-
-        Return:
-            svd (Dict[str, NDArray]): SVD in dictionary with keys: [U, S, V],
-            with matched matrix values.
         """
         def calculU(M):
             print(M)
