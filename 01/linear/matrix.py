@@ -118,7 +118,7 @@ class Matrix:
         Q, R = self.__adjust_sign(Q, R)
         return Q, R
 
-    def eigen(self, tol=1e-12, maxiter=5000):
+    def eigen(self, tol=1e-12, maxiter=100000):
         "Find the eigenvalues of A using QR decomposition."
         A = self.value
         A_old = np.copy(A)
@@ -130,9 +130,16 @@ class Matrix:
         i = 0
         while (diff > tol) and (i < maxiter):
             A_old[:, :] = A_new
-            Matrxi_A_old = Matrix(A_old)
-            Q, R = Matrxi_A_old.QR_Decomposition()
-            A_new[:, :] = R @ Q
+            # Wilkinson shift (using the bottom-right element of A)
+            mu = A_old[-1, -1]  # Shift is the last diagonal element
+            A_shifted = A_old - mu * np.eye(A.shape[0])  # A - μI
+            
+            # Perform QR decomposition on the shifted matrix
+            Matrix_A_shifted = Matrix(A_shifted)
+            Q, R = Matrix_A_shifted.QR_Decomposition()
+
+            # Update the matrix: A_new = R @ Q + μI
+            A_new[:, :] = R @ Q + mu * np.eye(A.shape[0])
             V = V @ Q
             diff = np.abs(A_new - A_old).max()
             i += 1
