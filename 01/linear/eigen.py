@@ -9,3 +9,8 @@ print(np.linalg.eig(A)[1])
 Matrix_A = Matrix(A)
 
 print(Matrix_A.eigen()[1])
+
+A = np.array([[4,2,0],[1,5,6]])
+Matrix_A = Matrix(A)
+
+print(Matrix_A.svd())

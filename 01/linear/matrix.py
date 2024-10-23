@@ -159,6 +159,7 @@ class Matrix:
             with matched matrix values.
         """
         def calculU(M):
+            print(M)
             Matrix_M = Matrix(M)
             B = Matrix_M * Matrix_M.transpose() 
             eigenvalues, eigenvectors = B.eigen()
@@ -171,5 +172,23 @@ class Matrix:
             B = Matrix_M.transpose() * Matrix_M
             eigenvalues, eigenvectors = B.eigen()
             ncols = np.argsort(eigenvalues)[::-1] 
-            return eigenvectors[:,ncols].T 
+            return eigenvectors[:,ncols].T
+        
+        def calculSigma(M):
+            matrix_M = Matrix(M)
+            if np.size((matrix_M * matrix_M.transpose()).value) > np.size((matrix_M.transpose()*matrix_M).value): 
+                new_M = matrix_M.transpose()*matrix_M
+            else: 
+                new_M = matrix_M * matrix_M.transpose()
+                
+            eigenvalues, eigenvectors = new_M.eigen()
+            eigenvalues = np.sqrt(eigenvalues)
+            #Sorting in descending order as the svd function does 
+            return eigenvalues[::-1]
+        
+        U = calculU(self.value) 
+        Sigma = calculSigma(self.value) 
+        Vt = calculVt(self.value)
+
+        return U, Sigma, Vt
 
