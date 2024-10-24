@@ -1,10 +1,9 @@
 from linear.matrix import Matrix
 from models.pca import SVD_PCA
 import numpy as np
-import unittest
 from sklearn.decomposition import PCA
 
-X = np.random.random((4, 3))
+X = np.random.random((100, 15))
 
 pca = SVD_PCA()
 matrix_X = Matrix(X)
