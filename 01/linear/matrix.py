@@ -1,6 +1,6 @@
 import numpy as np
-from typing import Dict, Self
 from numpy.typing import NDArray
+import metrics.kernels as kernels
 
 
 class Matrix:
@@ -11,7 +11,7 @@ class Matrix:
     ----------
     matrix : np.NDArray
         Matrix
-    
+
     Params:
     ----------
     value : (np.NDArray)
@@ -40,7 +40,7 @@ class Matrix:
             raise TypeError("Data must be a numpy ndarray.")
         self.value = value
         self.shape = value.shape
-    
+
     def __add__(self, matrix: 'Matrix'):
         if self.shape != matrix.shape:
             raise ValueError(f"Can't add matrix with shapes: {self.shape}, {matrix.shape}")
@@ -50,18 +50,22 @@ class Matrix:
         if self.shape != matrix.shape:
             raise ValueError(f"Can't substruct matrix with shapes: {self.shape}, {matrix.shape}")
         return Matrix(self.value - matrix.value)
-    
+
     def __mul__(self, other: 'Matrix'):
         if isinstance(other, Matrix):
             if self.shape[1] != other.shape[0]:
                 raise ValueError(f"Can't multiply matrix with shapes: {self.shape}, {other.shape}")
             return Matrix(self.value.dot((other.value)))
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return Matrix(self.value * other)
-    
-    def __rmul__(self, other):
+
+    def __rmul__(self, other: 'Matrix'):
         if isinstance(other, (int, float)):
             return Matrix(other * self.value)
+        if isinstance(other, Matrix):
+            if self.shape[1] != other.shape[0]:
+                raise ValueError(f"Can't multiply matrix with shapes: {self.shape}, {other.shape}")
+            return Matrix(np.dot(other.value, self.value))
         else:
             return NotImplemented
 
@@ -109,10 +113,10 @@ class Matrix:
             for j in range(i):
                 u[:, i] -= (A[:, i] @ Q[:, j]) * Q[:, j]
             norm_u_i = np.linalg.norm(u[:, i])
-            # if norm_u_i > 1e-15:  # Use a small threshold to avoid division by zero
-            Q[:, i] = u[:, i] / norm_u_i
-            # else:
-            #     Q[:, i] = np.zeros_like(u[:, i])  # Handle zero norm gracefully
+            if norm_u_i > 1e-15:  # Use a small threshold to avoid division by zero
+                Q[:, i] = u[:, i] / norm_u_i
+            else:
+                Q[:, i] = np.zeros_like(u[:, i])  # Handle zero norm gracefully
 
         R = np.zeros((n, m))
         for i in range(n):
@@ -170,10 +174,27 @@ class Matrix:
         return eigvals, eigvecs
 
 
-    def svd(self):
+    def svd(self, kernel: str = 'linear'):
+
+        if kernel == 'linear':
+            kernel = None
+        elif kernel == 'rbf':
+            kernel = kernels.rbf_kernel
+        elif kernel == 'poly':
+            kernel = kernels.poly_kernel
+        elif kernel == 'laplacian':
+            kernel = kernels.laplacian_kernel
+        elif kernel == 'sigmoid':
+            kernel = kernels.sigmoid_kernel
+
         def calculU(M):
-            Matrix_M = Matrix(M)
-            B = Matrix_M * Matrix_M.transpose()  # B = M M^T
+            matrix_M = Matrix(M)
+
+            if kernel:
+                B = kernel(matrix_M.transpose())
+            else:
+                B = matrix_M * matrix_M.transpose()  # B = M M^T
+
             eigenvalues, eigenvectors = B.eigen()  # Eigenvectors are left singular vectors
 
             # Sort eigenvalues and corresponding eigenvectors
@@ -181,36 +202,47 @@ class Matrix:
             U = eigenvectors[:, sorted_indices]  # Rearrange eigenvectors in descending order
             return U
 
-        def calculVt(M): 
-            Matrix_M = Matrix(M)
-            B = Matrix_M.transpose() * Matrix_M  # B = M^T M
+        def calculVt(M):
+            matrix_M = Matrix(M)
+
+            if kernel:
+                B = kernel(matrix_M)
+            else:
+                B = matrix_M.transpose() * matrix_M  # B = M M^T
+
             eigenvalues, eigenvectors = B.eigen()  # Eigenvectors are right singular vectors (V)
-            
+
             # Sort eigenvalues and corresponding eigenvectors
             sorted_indices = np.argsort(eigenvalues)[::-1]
             Vt = eigenvectors[:, sorted_indices].T  # Transpose V to get V^T
             return Vt
-            
+
         def calculSigma(M):
             matrix_M = Matrix(M)
-            
+
             # Compute eigenvalues of M M^T or M^T M
             if np.size((matrix_M * matrix_M.transpose()).value) > np.size((matrix_M.transpose() * matrix_M).value):
-                new_M = matrix_M.transpose() * matrix_M
-            else: 
-                new_M = matrix_M * matrix_M.transpose()
-            
+                if kernel:
+                    new_M = kernel(matrix_M)
+                else:
+                    new_M = matrix_M.transpose() * matrix_M
+            else:
+                if kernel:
+                    new_M = kernel(matrix_M.transpose())
+                else:
+                    new_M = matrix_M * matrix_M.transpose()       
+
             eigenvalues, _ = new_M.eigen()
-            
+
             # Singular values are the square roots of the eigenvalues
             singular_values = np.sqrt(np.abs(eigenvalues))  # Ensure no negative values due to numerical issues
-            
+
             # Sorting in descending order
             sorted_singular_values = np.sort(singular_values)[::-1]
             return sorted_singular_values
-        
+
         U = calculU(self.value) 
-        Sigma = calculSigma(self.value) 
+        Sigma = calculSigma(self.value)
         Vt = calculVt(self.value)
 
         return U, Sigma, Vt

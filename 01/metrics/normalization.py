@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 import numpy.typing as npt
-from .matrix import Matrix
+from linear.matrix import Matrix
 
 
 def normalization(matrix: Matrix, degree: int = 2) -> Matrix:
