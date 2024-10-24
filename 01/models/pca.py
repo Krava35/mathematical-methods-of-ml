@@ -40,9 +40,9 @@ class SVD_PCA:
         return np.exp(-gamma * norm_matrix.value)
 
     def __poly_kernel(self, matrix: Matrix, degree: np.float64 = 3, gamma: np.float64 | None = 1, c: np.float64 | None = 1):
-        coeff = np.full(matrix.shape, c)
+        coeff = np.full(matrix.shape[0], c)
         return (gamma * matrix.transpose().value() * matrix.value() + coeff) ** degree
     
     def __sigmoid_kernel(self, matrix: Matrix, gamma: np.float64 | None = 1, c: np.float64 | None = 1):
-        coeff = np.full(matrix.shape, c)
+        coeff = np.full(matrix.shape[0], c)
         return np.tanh(gamma * matrix.transpose().value() * matrix.value() + coeff)

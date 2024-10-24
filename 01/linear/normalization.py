@@ -17,7 +17,7 @@ def __normalization(array: npt.ArrayLike, degree: int = 2) -> np.float64:
 
 def __transformation(distances: List, n: int) -> Matrix:
     n = len(distances)
-    
+
     m = np.zeros((n, n), dtype=np.float64)
     for i in range(n):
         m[i] = distances[-i:] + distances[:-i]
